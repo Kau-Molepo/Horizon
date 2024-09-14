@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: horizon-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: horizon
+  template:
+    metadata:
+      labels:
+        app: horizon
+    spec:
+      containers:
+        - name: backend
+          image: your-dockerhub-username/horizon-backend:latest
+          ports:
+            - containerPort: 80
