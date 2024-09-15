@@ -1,8 +1,11 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.db import crud
-from app.models import user as user_model
-from app.db.database import get_db
+import sys
+sys.path.append("..") # Adds higher directory to python modules path.
+from db import crud
+from models import user as user_model
+from database import get_db
+
 
 router = APIRouter()
 

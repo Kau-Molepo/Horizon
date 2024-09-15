@@ -1,6 +1,10 @@
 from sqlalchemy.orm import Session
 from . import models
-from app.models import user as user_model, payroll as payroll_model, recruitment as recruitment_model
+import sys
+sys.path.append("..") # Adds higher directory to python modules path.
+from models import user as user_model
+from models import payroll as payroll_model
+from models import recruitment as recruitment_model
 
 # User CRUD
 def create_user(db: Session, user: user_model.UserCreate):
