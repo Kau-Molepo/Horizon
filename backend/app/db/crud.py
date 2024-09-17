@@ -1,3 +1,4 @@
+import bcrypt
 from sqlalchemy.orm import Session
 import sys
 sys.path.append("..") # Adds higher directory to python modules path.
@@ -10,11 +11,16 @@ from fastapi import HTTPException
 # === USERS CRUD ===
 
 def create_user(db: Session, user: UserCreate):
+    def hash_password(password: str) -> str:
+        # Generate a salt and hash the password
+        salt = bcrypt.gensalt()
+        hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
+        return hashed.decode('utf-8')
     try:
         db_user = User(
             username=user.username,
             email=user.email,
-            hashed_password=user.hashed_password,
+            hashed_password=hash_password(user.password),
             full_name=user.full_name,
             role=user.role
         )

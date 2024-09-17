@@ -7,7 +7,7 @@ class UserCreate(BaseModel):
     username: str
     email: EmailStr
     full_name: Optional[str] = None
-    hashed_password: str
+    password: str
     role: Optional[str] = None
 
 class UserOut(BaseModel):
@@ -23,7 +23,7 @@ class UserUpdate(BaseModel):
     username: Optional[str] = None
     email: Optional[EmailStr] = None
     full_name: Optional[str] = None
-    hashed_password: Optional[str] = None
+    password: Optional[str] = None
     role: Optional[str] = None
 
 # Payroll Schemas
