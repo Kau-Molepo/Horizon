@@ -1,38 +1,51 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Header
 from typing import List
 from sqlalchemy.orm import Session
 import sys
 sys.path.append("..") # Adds higher directory to python modules path.
-from db.schemas import UserCreate, UserOut, UserUpdate
+from db import schemas
 from db import crud
 from database import get_db
+from firebase.auth import *
 
 user_router = APIRouter()
 
-@user_router.post("/", response_model=UserOut)
-def create_user(user: UserCreate, db: Session = Depends(get_db)):
-    db_user = crud.create_user(user=user, db=db)
+@user_router.post("/register")
+def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    db_user = crud.create_user(db, user)
     if not db_user:
         raise HTTPException(status_code=400, detail="User creation failed")
-    return db_user
+    return {"message": "Registration successful", "username": db_user.username, "registered": db_user.created_at}
 
-@user_router.get("/{user_id}", response_model=UserOut)
+@user_router.post("/login")
+def login(firebase_token: str = Header(...), db: Session = Depends(get_db)):
+    db_user = crud.authenticate_user(db, firebase_token)
+    if not db_user:
+        raise HTTPException(status_code=400, detail="Login failed")
+    
+    # Create JWT token
+    access_token = crud.create_access_token(data={"sub": db_user.username, "firebase_uid": db_user.firebase_uid})
+    
+    return {"message": "Login successful", "user_id": db_user.user_id, "access_token": access_token, "token_type": "bearer"}
+
+@user_router.get("/user", response_model=schemas.UserOut)
 def get_user(user_id: int, db: Session = Depends(get_db)):
-    db_user = crud.get_user(user_id=user_id, db=db)
+    db_user = crud.get_user(db, user_id)
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
     return db_user
 
-@user_router.put("/{user_id}", response_model=UserOut)
-def update_user(user_id: int, user: UserUpdate, db: Session = Depends(get_db)):
-    db_user = crud.update_user(user_id=user_id, user=user, db=db)
+@user_router.put("/update", response_model=schemas.UserOut)
+def update_user(user_id: int, user: schemas.UserUpdate, db: Session = Depends(get_db)):
+    db_user = crud.update_user(db, user_id, user)
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
     return db_user
 
-@user_router.delete("/{user_id}", response_model=dict)
+@user_router.delete("/delete", response_model=dict)
 def delete_user(user_id: int, db: Session = Depends(get_db)):
-    result = crud.delete_user(user_id=user_id, db=db)
+    result = crud.delete_user(db, user_id)
     if not result:
         raise HTTPException(status_code=404, detail="User not found")
     return {"status": "User deleted"}
+

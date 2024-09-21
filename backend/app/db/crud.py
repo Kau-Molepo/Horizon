@@ -1,44 +1,110 @@
 import bcrypt
+import jwt
+import logging
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
+import os
 import sys
 sys.path.append("..") # Adds higher directory to python modules path.
-
 from .models import *
 from .schemas import *
 from sqlalchemy.exc import SQLAlchemyError
 from fastapi import HTTPException
+from dotenv import load_dotenv
+from firebase.auth import *
+
+load_dotenv()
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+SECRET_KEY =  os.getenv('SECRET_KEY')
+ALGORITHM = os.getenv('ALGORITHM')
 
 # === USERS CRUD ===
 
 def create_user(db: Session, user: UserCreate):
-    def hash_password(password: str) -> str:
-        # Generate a salt and hash the password
-        salt = bcrypt.gensalt()
-        hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
-        return hashed.decode('utf-8')
     try:
+        # 1. Create Firebase user
+        firebase_user = auth.create_user(
+            email=user.email,
+            password=user.password,
+            display_name=user.full_name
+        )
+
+        firebase_uid = firebase_user.uid
+
+        # 2. Check if user already exists in backend
+        existing_user = db.query(User).filter(User.hashed_firebase_uid == firebase_uid).first()
+        if existing_user:
+            raise HTTPException(status_code=400, detail="User already exists")
+
+        # 3. Hash the Firebase UID before storing
+        hashed_firebase_uid = bcrypt.hashpw(firebase_uid.encode('utf-8'), bcrypt.gensalt())
+
+        # 4. Hash the password
+        hashed_password = bcrypt.hashpw(user.password.encode('utf-8'), bcrypt.gensalt())
+
+        # 5. Create user in backend database
         db_user = User(
             username=user.username,
             email=user.email,
-            hashed_password=hash_password(user.password),
+            hashed_password=hashed_password.decode('utf-8'),
             full_name=user.full_name,
-            role=user.role
+            role=user.role,
+            hashed_firebase_uid=hashed_firebase_uid.decode('utf-8')  # Store hashed UID
         )
         db.add(db_user)
         db.commit()
         db.refresh(db_user)
         return db_user
+
     except SQLAlchemyError as e:
         db.rollback()
-        # Log error
-        print(f"Error creating user: {e}")
+        logger.error(f"Error creating user in database: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
+    except Exception as e:
+        logger.error(f"Error during Firebase authentication: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+
+def authenticate_user(db: Session, firebase_token: str):
+    try:
+        # Verify Firebase token
+        decoded_token = verify_firebase_token(firebase_token)
+        firebase_uid = decoded_token['uid']
+        
+        # Hash the Firebase UID for comparison
+        hashed_firebase_uid = bcrypt.hashpw(firebase_uid.encode('utf-8'), bcrypt.gensalt())
+        
+        # Find user in database
+        db_user = db.query(User).filter(User.hashed_firebase_uid == hashed_firebase_uid).first()
+        if not db_user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        return db_user
+    except SQLAlchemyError as e:
+        print(f"Error authenticating user: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    except Exception as e:
+        logger.error(f"Error during Firebase token verification: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
 
 def get_user(db: Session, user_id: int):
     try:
         return db.query(User).filter(User.user_id == user_id).first()
     except SQLAlchemyError as e:
-        # Log error
         print(f"Error retrieving user with ID {user_id}: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
@@ -46,7 +112,6 @@ def get_user_by_username(db: Session, username: str):
     try:
         return db.query(User).filter(User.username == username).first()
     except SQLAlchemyError as e:
-        # Log error
         print(f"Error retrieving user with username {username}: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
@@ -54,9 +119,8 @@ def update_user(db: Session, user_id: int, user_update: UserUpdate):
     try:
         db_user = db.query(User).filter(User.user_id == user_id).first()
         if db_user:
-            db_user.email = user_update.email
-            db_user.full_name = user_update.full_name
-            db_user.role = user_update.role
+            for key, value in user_update.dict(exclude_unset=True).items():
+                setattr(db_user, key, value)
             db.commit()
             db.refresh(db_user)
             return db_user
@@ -64,7 +128,6 @@ def update_user(db: Session, user_id: int, user_update: UserUpdate):
             raise HTTPException(status_code=404, detail="User not found")
     except SQLAlchemyError as e:
         db.rollback()
-        # Log error
         print(f"Error updating user with ID {user_id}: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
@@ -72,6 +135,10 @@ def delete_user(db: Session, user_id: int):
     try:
         db_user = db.query(User).filter(User.user_id == user_id).first()
         if db_user:
+            # Delete user from Firebase
+            delete_firebase_user(db_user.hashed_firebase_uid)
+            
+            # Delete user from database
             db.delete(db_user)
             db.commit()
             return db_user
@@ -79,7 +146,6 @@ def delete_user(db: Session, user_id: int):
             raise HTTPException(status_code=404, detail="User not found")
     except SQLAlchemyError as e:
         db.rollback()
-        # Log error
         print(f"Error deleting user with ID {user_id}: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
