@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "647579700830",
+    "firebase_url": "https://horizon-315bd-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "horizon-315bd",
+    "storage_bucket": "horizon-315bd.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:647579700830:android:c7452701069797b3c22ecf",
+        "android_client_info": {
+          "package_name": "com.horizon.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "647579700830-r9i9iruol7qe11t1qutvha8se2rm26hv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCJe5pb7wP_83N7KdBdd9eePAJGiAbzj10"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "647579700830-r9i9iruol7qe11t1qutvha8se2rm26hv.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "647579700830-peoo6hg7i0cvhlb5040l6n0mq8nch7h5.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.flutterApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

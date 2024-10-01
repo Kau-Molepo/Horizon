@@ -18,13 +18,14 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     return {"message": "Registration successful", "username": db_user.username, "registered": db_user.created_at}
 
 @user_router.post("/login")
-def login(firebase_token: str = Header(...), db: Session = Depends(get_db)):
-    db_user = crud.authenticate_user(db, firebase_token)
+def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
+    
+    db_user = crud.authenticate_user(db, user)
     if not db_user:
         raise HTTPException(status_code=400, detail="Login failed")
     
     # Create JWT token
-    access_token = crud.create_access_token(data={"sub": db_user.username, "firebase_uid": db_user.firebase_uid})
+    access_token = db_user.access_token
     
     return {"message": "Login successful", "user_id": db_user.user_id, "access_token": access_token, "token_type": "bearer"}
 

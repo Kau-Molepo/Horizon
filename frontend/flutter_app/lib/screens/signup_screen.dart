@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
-import 'signup_screen.dart';
+import 'package:flutter_app/screens/login_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<SignUpScreen> createState() => _SignUpScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +23,7 @@ class _LoginScreenState extends State<LoginScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text(
-              "Login",
+              "Sign Up",
               style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
             ),
             const SizedBox(height: 40),
@@ -70,38 +71,61 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               style: const TextStyle(color: Colors.white),
             ),
+            const SizedBox(height: 20),
+
+            // Confirm Password Input Field
+            TextField(
+              controller: _confirmPasswordController,
+              obscureText: true,
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.lock_outline, color: Colors.white),
+                labelText: 'Confirm Password',
+                labelStyle: const TextStyle(color: Colors.white70),
+                filled: true,
+                fillColor: Colors.grey[800],
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.white30),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.white),
+                ),
+              ),
+              style: const TextStyle(color: Colors.white),
+            ),
             const SizedBox(height: 40),
 
-            // Login Button
+            // Sign Up Button
             ElevatedButton(
               onPressed: () {
-                // Add login logic here
+                // Add sign-up logic here
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueAccent,
+                backgroundColor: Colors.purpleAccent,
                 padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 15),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
               child: const Text(
-                'Login',
+                'Sign Up',
                 style: TextStyle(color: Colors.white, fontSize: 18),
               ),
             ),
 
             const SizedBox(height: 20),
 
-            // Switch to Sign Up Screen
+            // Switch to Login Screen
             TextButton(
               onPressed: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => const SignUpScreen()),
-                );
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                );// Go back to login screen
               },
               child: const Text(
-                "Don't have an account? Sign up",
+                "Already have an account? Login",
                 style: TextStyle(color: Colors.white70),
               ),
             ),

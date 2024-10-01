@@ -27,8 +27,10 @@ class UserUpdate(BaseModel):
     role: Optional[str] = None
     
 class UserLogin(BaseModel):
-    username: str
+    username: Optional[str] = None
+    email: EmailStr
     password: str
+    access_token: Optional[str] = None
 
 # Payroll Schemas
 class PayrollCreate(BaseModel):

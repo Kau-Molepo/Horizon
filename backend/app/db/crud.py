@@ -34,7 +34,7 @@ def create_user(db: Session, user: UserCreate):
         )
 
         firebase_uid = firebase_user.uid
-
+        # print(firebase_uid)
         # 2. Check if user already exists in backend
         existing_user = db.query(User).filter(User.hashed_firebase_uid == firebase_uid).first()
         if existing_user:
@@ -69,27 +69,45 @@ def create_user(db: Session, user: UserCreate):
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
-def authenticate_user(db: Session, firebase_token: str):
+def authenticate_user(db: Session, user: UserLogin):
     try:
-        # Verify Firebase token
-        decoded_token = verify_firebase_token(firebase_token)
-        firebase_uid = decoded_token['uid']
+        # 1. Authenticate with Firebase and get the Firebase UID
+        firebase_user = firebase_login(user.email, user.password)  # Your function to log in via Firebase
         
-        # Hash the Firebase UID for comparison
-        hashed_firebase_uid = bcrypt.hashpw(firebase_uid.encode('utf-8'), bcrypt.gensalt())
+        # 2. Verify Firebase ID token and extract the UID
+        firebase_uid = firebase_user['localId']
         
-        # Find user in database
-        db_user = db.query(User).filter(User.hashed_firebase_uid == hashed_firebase_uid).first()
+        # 3. Find the user in the FastAPI database using the email
+        db_user = db.query(User).filter(User.email == user.email).first()
+
         if not db_user:
-            raise HTTPException(status_code=404, detail="User not found")
-        
+            raise HTTPException(status_code=404, detail="User not found in FastAPI database")
+
+        # 4. Compare the stored hashed Firebase UID with the one returned from Firebase
+        stored_hashed_firebase_uid = db_user.hashed_firebase_uid.encode('utf-8')
+        if not bcrypt.checkpw(firebase_uid.encode('utf-8'), stored_hashed_firebase_uid):
+            raise HTTPException(status_code=401, detail="Invalid Firebase UID")
+
+        # 5. If Firebase UID matches, create a FastAPI JWT token
+        access_token = create_access_token(
+            data={"sub": db_user.email, "role": db_user.role}  # Adding user's email and role to token
+        )
+
+        # 6. Attach the JWT to the db_user object
+        db_user.access_token = access_token  # Assume we modify the model or schema to handle tokens
+
+        # Return the db_user object itself (it will be used in user-routes and will be serialized properly)
         return db_user
+
     except SQLAlchemyError as e:
+        # Handle any database-related errors
         print(f"Error authenticating user: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
     except Exception as e:
-        logger.error(f"Error during Firebase token verification: {e}")
+        # Log and raise other exceptions
+        print(f"Error during authentication: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
+
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     to_encode = data.copy()
