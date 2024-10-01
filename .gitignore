@@ -1,0 +1,4 @@
+.env
+env/
+frontend/flutter_app/lib/firebase_options.dart
+

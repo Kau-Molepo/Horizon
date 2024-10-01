@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'signup_screen.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,11 +13,63 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _isLoading = false; // To show a loading indicator while waiting for a response
+
+  // FastAPI Login Function
+  Future<void> _login() async {
+    setState(() {
+      _isLoading = true; // Start loading
+    });
+
+    // Define the API endpoint
+    const String apiUrl = "http://127.0.0.1:8000/users/login"; // Replace with your FastAPI URL
+
+    // Prepare the request body
+    Map<String, dynamic> body = {
+      'email': _emailController.text,
+      'password': _passwordController.text,
+    };
+
+    try {
+      // Send a POST request to the login endpoint
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(body),
+      );
+
+      // Check if the response is successful
+      if (response.statusCode == 200) {
+        // Parse the response body
+        var jsonResponse = jsonDecode(response.body);
+
+        // If login is successful, navigate to the Dashboard
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DashboardScreen()),
+        );
+      } else {
+        // If the login fails, show an error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid email or password')),
+        );
+      }
+    } catch (error) {
+      // Handle network or other errors
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $error')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false; // Stop loading
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[900],
+      backgroundColor: Colors.black87, // Matching theme with splash screen
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 50),
         child: Column(
@@ -72,39 +126,23 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 40),
 
-            // Login Button
-            ElevatedButton(
-              onPressed: () {
-                // Add login logic here
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueAccent,
-                padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text(
-                'Login',
-                style: TextStyle(color: Colors.white, fontSize: 18),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Switch to Sign Up Screen
-            TextButton(
-              onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SignUpScreen()),
-                );
-              },
-              child: const Text(
-                "Don't have an account? Sign up",
-                style: TextStyle(color: Colors.white70),
-              ),
-            ),
+            // Login Button with Loading Indicator
+            _isLoading
+                ? const CircularProgressIndicator()
+                : ElevatedButton(
+                    onPressed: _login, // Call the login function
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueAccent,
+                      padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Login',
+                      style: TextStyle(color: Colors.white, fontSize: 18),
+                    ),
+                  ),
           ],
         ),
       ),
