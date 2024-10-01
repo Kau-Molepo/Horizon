@@ -1,111 +1,202 @@
 import 'package:flutter/material.dart';
-import 'application_screen.dart'; // Define the respective screens for each module
+import 'application_screen.dart'; // Ensure these imports are correct
 import 'payroll_screen.dart';
 import 'hr_screen.dart';
 import 'support_screen.dart';
 import 'document_upload_screen.dart';
+import 'analytics_screen.dart'; // Ensure all screen imports are valid
 
-class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({super.key});
+class DashboardScreen extends StatefulWidget {
+  const DashboardScreen({Key? key}) : super(key: key); // Correctly using the Key constructor
+
+  @override
+  _DashboardScreenState createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  // List of screens corresponding to the navigation items
+  final List<Widget> _screens = [
+    const AnalyticsScreen(key: ValueKey('AnalyticsScreen')),
+    const PayrollScreen(key: ValueKey('PayrollScreen')),
+    const HrScreen(key: ValueKey('HrScreen')),
+    const SupportScreen(key: ValueKey('SupportScreen')),
+    const DocumentUploadScreen(key: ValueKey('DocumentUploadScreen')),
+  ];
+
+  int _currentIndex = 0; // Track the current screen index
+  bool _isDarkMode = false; // Track dark mode state
 
   @override
   Widget build(BuildContext context) {
-    // Use MediaQuery to get screen dimensions
-    final size = MediaQuery.of(context).size;
-
-    // Adjust the number of columns based on screen width
-    int crossAxisCount = size.width > 600 ? 3 : 2; // 3 columns for wide screens, 2 for narrow screens
-    double aspectRatio = size.width > 600 ? 1.2 : 1.0; // Adjust the aspect ratio to ensure it looks good
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Employee Dashboard'),
-        backgroundColor: Colors.blueAccent,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: GridView.count(
-          crossAxisCount: crossAxisCount,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: aspectRatio,
+    return MaterialApp(
+      theme: _isDarkMode ? ThemeData.dark() : ThemeData.light(),
+      home: Scaffold(
+        body: Row(
           children: [
-            _buildDashboardItem(
-              context,
-              icon: Icons.apps,
-              label: "Applications",
-              onTap: () => Navigator.push(
-                context, MaterialPageRoute(builder: (context) => const ApplicationScreen())
+            _buildDrawer(), // Build the navigation drawer
+            Expanded(
+              child: SafeArea(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300), // Smooth transition
+                        child: _screens[_currentIndex], // Display the current screen
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            _buildDashboardItem(
-              context,
-              icon: Icons.attach_money,
-              label: "Payroll",
-              onTap: () => Navigator.push(
-                context, MaterialPageRoute(builder: (context) => const PayrollScreen())
+            _buildUserProfile(), // User profile on the right drawer
+          ],
+        ),
+        endDrawer: _buildUserProfile(), // Moving the profile to the right drawer
+      ),
+    );
+  }
+
+  Widget _buildDrawer() {
+    return Container(
+      width: 250, // Fixed width for the drawer
+      color: _isDarkMode ? Colors.grey[850] : Colors.blueGrey[800], // Darker background for the drawer
+      child: Drawer(
+        child: Column(
+          children: [
+            _buildDrawerHeader(), // Header of the drawer
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  _buildDrawerItem(Icons.trending_up, 'Analytics', 0),
+                  _buildDrawerItem(Icons.attach_money, 'Payroll', 1),
+                  _buildDrawerItem(Icons.people, 'HR', 2),
+                  _buildDrawerItem(Icons.support, 'Support', 3),
+                  _buildDrawerItem(Icons.upload_file, 'Documents', 4),
+                  _buildDrawerItem(Icons.person, 'Profile', -1), // -1 indicates under construction
+                ],
               ),
             ),
-            _buildDashboardItem(
-              context,
-              icon: Icons.people,
-              label: "HR",
-              onTap: () => Navigator.push(
-                context, MaterialPageRoute(builder: (context) => const HrScreen())
-              ),
-            ),
-            _buildDashboardItem(
-              context,
-              icon: Icons.support,
-              label: "Support",
-              onTap: () => Navigator.push(
-                context, MaterialPageRoute(builder: (context) => const SupportScreen())
-              ),
-            ),
-            _buildDashboardItem(
-              context,
-              icon: Icons.upload_file,
-              label: "Documents",
-              onTap: () => Navigator.push(
-                context, MaterialPageRoute(builder: (context) => const DocumentUploadScreen())
-              ),
-            ),
-            _buildDashboardItem(
-              context,
-              icon: Icons.person,
-              label: "Profile",
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Profile screen is under construction"))
-                );
-              },
-            ),
+            _buildThemeToggle(), // Theme toggle switch
           ],
         ),
       ),
     );
   }
 
-  // Helper method to create a dashboard item
-  Widget _buildDashboardItem(BuildContext context, {required IconData icon, required String label, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Card(
-        color: Colors.blueGrey[50], // Keep consistent theme color
-        elevation: 4,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 50, color: Colors.blueAccent),
-              const SizedBox(height: 10),
-              Text(label, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blueAccent)),
-            ],
+  Widget _buildDrawerHeader() {
+    return DrawerHeader(
+      decoration: BoxDecoration(
+        color: Colors.blueAccent,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            backgroundImage: NetworkImage('https://via.placeholder.com/150'), // Placeholder image
+            radius: 40,
           ),
+          const SizedBox(height: 10),
+          const Text(
+            'John Doe',
+            style: TextStyle(color: Colors.white, fontSize: 24, fontFamily: 'Roboto'),
+          ),
+          const Text(
+            'Employee',
+            style: TextStyle(color: Colors.white),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () {
+              // Logout functionality goes here
+              // For example, Navigator.pushReplacementNamed(context, '/login');
+            },
+            child: const Text('Log Out'),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDrawerItem(IconData icon, String label, int index) {
+    final isActive = _currentIndex == index; // Check if the item is active
+    return Tooltip(
+      message: label,
+      child: ListTile(
+        leading: Icon(icon, color: isActive ? Colors.white : Colors.white70),
+        title: Text(
+          label,
+          style: TextStyle(
+            color: isActive ? Colors.white : Colors.white70,
+            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+        tileColor: isActive ? Colors.blueAccent : Colors.transparent,
+        onTap: () {
+          if (index >= 0) {
+            setState(() {
+              _currentIndex = index; // Update current index
+            });
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Profile screen is under construction")),
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildThemeToggle() {
+    return SwitchListTile(
+      title: const Text('Dark Mode'),
+      value: _isDarkMode,
+      onChanged: (bool value) {
+        setState(() {
+          _isDarkMode = value; // Toggle dark mode
+        });
+      },
+      secondary: const Icon(Icons.brightness_6),
+    );
+  }
+
+  Widget _buildUserProfile() {
+    return Drawer(
+      child: Container(
+        width: 300, // Fixed width for the user profile section
+        padding: const EdgeInsets.all(16),
+        color: _isDarkMode ? Colors.grey[850] : Colors.white,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'User Profile',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, fontFamily: 'Roboto'),
+            ),
+            const SizedBox(height: 16),
+            const Text('Name: John Doe', style: TextStyle(fontSize: 16)),
+            const Text('Role: Employee', style: TextStyle(fontSize: 16)),
+            const Text('Email: john.doe@example.com', style: TextStyle(fontSize: 16)),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                // Edit profile functionality goes here
+                // For example, Navigator.pushNamed(context, '/editProfile');
+              },
+              child: const Text('Edit Profile'),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                // Logout functionality goes here
+                // For example, Navigator.pushReplacementNamed(context, '/login');
+              },
+              child: const Text('Log Out'),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            ),
+          ],
         ),
       ),
     );
