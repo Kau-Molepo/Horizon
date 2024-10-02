@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'application_screen.dart'; // Ensure these imports are correct
+import 'application_screen.dart'; 
 import 'payroll_screen.dart';
 import 'hr_screen.dart';
 import 'support_screen.dart';
 import 'document_upload_screen.dart';
-import 'analytics_screen.dart'; // Ensure all screen imports are valid
+import 'analytics_screen.dart'; 
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -15,12 +15,12 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   // List of screens corresponding to the navigation items
-  final List<Widget> _screens = [
-    const AnalyticsScreen(key: ValueKey('AnalyticsScreen')),
-    const PayrollScreen(key: ValueKey('PayrollScreen')),
-    const HrScreen(key: ValueKey('HrScreen')),
-    const SupportScreen(key: ValueKey('SupportScreen')),
-    const DocumentUploadScreen(key: ValueKey('DocumentUploadScreen')),
+  final List<Widget> _screens = const [
+    AnalyticsScreen(key: ValueKey('AnalyticsScreen')),
+    PayrollScreen(key: ValueKey('PayrollScreen')),
+    HrScreen(key: ValueKey('HrScreen')),
+    SupportScreen(key: ValueKey('SupportScreen')),
+    DocumentUploadScreen(key: ValueKey('DocumentUploadScreen')),
   ];
 
   int _currentIndex = 0; // Track the current screen index
@@ -36,15 +36,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             _buildDrawer(), // Build the navigation drawer (left side)
             Expanded(
               child: SafeArea(
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 300), // Smooth transition
-                        child: _screens[_currentIndex], // Display the current screen
-                      ),
-                    ),
-                  ],
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300), // Smooth transition
+                  child: _screens[_currentIndex], // Display the current screen
                 ),
               ),
             ),
@@ -65,7 +59,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Drawer(
         child: Column(
           children: [
-            //_buildDrawerHeader(), // Header of the drawer
+            _buildDrawerHeader(), // Header of the drawer
             Expanded(
               child: ListView(
                 padding: EdgeInsets.zero,
@@ -75,7 +69,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   _buildDrawerItem(Icons.people, 'HR', 2),
                   _buildDrawerItem(Icons.support, 'Support', 3),
                   _buildDrawerItem(Icons.upload_file, 'Documents', 4),
-                  _buildDrawerItem(Icons.person, 'Profile', -1), // -1 indicates under construction
+                  _buildDrawerItem(Icons.person, 'Profile', -1), // Profile under construction
                 ],
               ),
             ),
@@ -88,14 +82,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildDrawerHeader() {
     return DrawerHeader(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.blueAccent,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CircleAvatar(
-            backgroundImage: NetworkImage('https://via.placeholder.com/150'), // Placeholder image
+            backgroundImage: const NetworkImage('https://via.placeholder.com/150'), // Placeholder image
             radius: 40,
           ),
         ],
@@ -162,20 +156,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                // Edit profile functionality goes here
-                Navigator.pushNamed(context, '/editProfile'); // Replace with your actual edit profile route
+                Navigator.pushNamed(context, '/editProfile'); // Navigate to edit profile screen
               },
-              child: const Text('Edit Profile'),
               style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
+              child: const Text('Edit Profile'),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                // Logout functionality goes here
-                Navigator.pushReplacementNamed(context, '/login'); // Replace with your actual login route
+                Navigator.pushReplacementNamed(context, '/login'); // Navigate to login screen
               },
-              child: const Text('Log Out'),
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text('Log Out'),
             ),
           ],
         ),
