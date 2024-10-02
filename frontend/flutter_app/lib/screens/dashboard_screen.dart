@@ -7,7 +7,7 @@ import 'document_upload_screen.dart';
 import 'analytics_screen.dart'; // Ensure all screen imports are valid
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({Key? key}) : super(key: key); // Correctly using the Key constructor
+  const DashboardScreen({Key? key}) : super(key: key);
 
   @override
   _DashboardScreenState createState() => _DashboardScreenState();
@@ -33,7 +33,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       home: Scaffold(
         body: Row(
           children: [
-            _buildDrawer(), // Build the navigation drawer
+            _buildDrawer(), // Build the navigation drawer (left side)
             Expanded(
               child: SafeArea(
                 child: Row(
@@ -48,10 +48,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
             ),
-            _buildUserProfile(), // User profile on the right drawer
+            _buildUserProfile(), // User profile on the right side
           ],
         ),
-        endDrawer: _buildUserProfile(), // Moving the profile to the right drawer
+        drawer: _buildDrawer(), // Main navigation drawer on the left
+        endDrawer: _buildUserProfile(), // User profile drawer on the right
+        drawerScrimColor: Colors.transparent, // Ensures both drawers are visible simultaneously
       ),
     );
   }
@@ -63,7 +65,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Drawer(
         child: Column(
           children: [
-            _buildDrawerHeader(), // Header of the drawer
+            //_buildDrawerHeader(), // Header of the drawer
             Expanded(
               child: ListView(
                 padding: EdgeInsets.zero,
@@ -96,24 +98,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             backgroundImage: NetworkImage('https://via.placeholder.com/150'), // Placeholder image
             radius: 40,
           ),
-          const SizedBox(height: 10),
-          const Text(
-            'John Doe',
-            style: TextStyle(color: Colors.white, fontSize: 24, fontFamily: 'Roboto'),
-          ),
-          const Text(
-            'Employee',
-            style: TextStyle(color: Colors.white),
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              // Logout functionality goes here
-              // For example, Navigator.pushReplacementNamed(context, '/login');
-            },
-            child: const Text('Log Out'),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-          ),
         ],
       ),
     );
@@ -124,11 +108,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Tooltip(
       message: label,
       child: ListTile(
-        leading: Icon(icon, color: isActive ? Colors.white : Colors.white70),
+        leading: Icon(icon, color: _isDarkMode ? Colors.white : Colors.grey[850]),
         title: Text(
           label,
           style: TextStyle(
-            color: isActive ? Colors.white : Colors.white70,
+            color: _isDarkMode ? Colors.white : Colors.grey[850],
             fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
           ),
         ),
@@ -170,10 +154,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'User Profile',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, fontFamily: 'Roboto'),
-            ),
+            _buildDrawerHeader(),
             const SizedBox(height: 16),
             const Text('Name: John Doe', style: TextStyle(fontSize: 16)),
             const Text('Role: Employee', style: TextStyle(fontSize: 16)),
@@ -182,7 +163,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ElevatedButton(
               onPressed: () {
                 // Edit profile functionality goes here
-                // For example, Navigator.pushNamed(context, '/editProfile');
+                Navigator.pushNamed(context, '/editProfile'); // Replace with your actual edit profile route
               },
               child: const Text('Edit Profile'),
               style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
@@ -191,7 +172,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ElevatedButton(
               onPressed: () {
                 // Logout functionality goes here
-                // For example, Navigator.pushReplacementNamed(context, '/login');
+                Navigator.pushReplacementNamed(context, '/login'); // Replace with your actual login route
               },
               child: const Text('Log Out'),
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
