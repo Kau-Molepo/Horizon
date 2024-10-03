@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
-import 'application_screen.dart'; 
+import 'package:flutter/material.dart'; 
+import 'application_screen.dart';
+import 'profile_screen.dart'; 
 import 'payroll_screen.dart';
 import 'hr_screen.dart';
 import 'support_screen.dart';
@@ -21,19 +22,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
     HrScreen(key: ValueKey('HrScreen')),
     SupportScreen(key: ValueKey('SupportScreen')),
     DocumentUploadScreen(key: ValueKey('DocumentUploadScreen')),
+    ProfileScreen(key: ValueKey('ProfileScreen')),
   ];
 
   int _currentIndex = 0; // Track the current screen index
   bool _isDarkMode = false; // Track dark mode state
 
-  @override
+ @override
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: _isDarkMode ? ThemeData.dark() : ThemeData.light(),
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Dashboard'),
           backgroundColor: _isDarkMode ? Colors.black : Colors.blueAccent,
+          title: Container(
+            width: double.infinity, // Make the container take full width
+            alignment: Alignment.center, // Center the title
+            child: const Text(
+              'Horizon',
+              style: TextStyle(
+                fontWeight: FontWeight.bold, // Optional: make the title bold
+              ),
+            ),
+          ),
           actions: [
             IconButton(
               icon: const Icon(Icons.settings),
@@ -59,12 +70,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             _buildUserProfile(), // User profile on the right side
           ],
         ),
-        drawer: _buildDrawer(), // Main navigation drawer on the left
         endDrawer: _buildUserProfile(), // User profile drawer on the right
         drawerScrimColor: Colors.transparent, // Ensures both drawers are visible simultaneously
       ),
     );
   }
+
 
   Widget _buildDrawer() {
     return Container(
@@ -74,7 +85,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero), // Remove rounding
         child: Column(
           children: [
-            _buildDrawerHeader(), // Header of the drawer
+            Padding( // Add padding here
+              padding: const EdgeInsets.only(top: 16.0), // Adjust the value as needed
+              child: _buildDrawerHeader(), // Header of the drawer
+            ),
             Expanded(
               child: ListView(
                 padding: EdgeInsets.zero,
@@ -84,7 +98,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   _buildDrawerItem(Icons.people, 'HR', 2),
                   _buildDrawerItem(Icons.support, 'Support', 3),
                   _buildDrawerItem(Icons.upload_file, 'Documents', 4),
-                  _buildDrawerItem(Icons.person, 'Profile', -1), // Profile under construction
+                  _buildDrawerItem(Icons.person, 'Profile', 5),
                 ],
               ),
             ),
@@ -101,7 +115,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         color: _isDarkMode ? Colors.black54 : Colors.blueAccent,
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           CircleAvatar(
             backgroundImage: const NetworkImage('https://via.placeholder.com/150'), // Placeholder image
@@ -157,15 +171,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildUserProfile() {
-    return Drawer(
-      child: Container(
-        width: 250, // Fixed width for the user profile section
-        padding: const EdgeInsets.all(16),
-        color: _isDarkMode ? Colors.grey[850] : Colors.white,
+return Container(
+      width: 250, // Fixed width for the drawer
+      color: _isDarkMode ? Colors.grey[850] : Colors.blueGrey[800], // Darker background for the drawer
+      child: Drawer(
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero), // Remove rounding
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildDrawerHeader(),
+            Padding( // Add padding here
+              padding: const EdgeInsets.only(top: 16.0), // Adjust the value as needed
+              child: _buildDrawerHeader(), // Header of the drawer
+            ),
             const SizedBox(height: 16),
             const Text('Name: John Doe', style: TextStyle(fontSize: 16)),
             const Text('Role: Employee', style: TextStyle(fontSize: 16)),
