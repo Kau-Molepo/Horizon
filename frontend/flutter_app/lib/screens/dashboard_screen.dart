@@ -31,6 +31,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return MaterialApp(
       theme: _isDarkMode ? ThemeData.dark() : ThemeData.light(),
       home: Scaffold(
+        appBar: AppBar(
+          title: const Text('Dashboard'),
+          backgroundColor: _isDarkMode ? Colors.black : Colors.blueAccent,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.settings),
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Settings not implemented yet")),
+                );
+              },
+            ),
+          ],
+        ),
         body: Row(
           children: [
             _buildDrawer(), // Build the navigation drawer (left side)
@@ -57,6 +71,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       width: 250, // Fixed width for the drawer
       color: _isDarkMode ? Colors.grey[850] : Colors.blueGrey[800], // Darker background for the drawer
       child: Drawer(
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero), // Remove rounding
         child: Column(
           children: [
             _buildDrawerHeader(), // Header of the drawer
@@ -82,8 +97,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildDrawerHeader() {
     return DrawerHeader(
-      decoration: const BoxDecoration(
-        color: Colors.blueAccent,
+      decoration: BoxDecoration(
+        color: _isDarkMode ? Colors.black54 : Colors.blueAccent,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -92,6 +107,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             backgroundImage: const NetworkImage('https://via.placeholder.com/150'), // Placeholder image
             radius: 40,
           ),
+          const SizedBox(height: 10),
+          const Text('Welcome, John Doe', style: TextStyle(color: Colors.white, fontSize: 16)),
         ],
       ),
     );
@@ -102,15 +119,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Tooltip(
       message: label,
       child: ListTile(
-        leading: Icon(icon, color: _isDarkMode ? Colors.white : Colors.grey[850]),
+        leading: Icon(icon, color: isActive ? Colors.blueAccent : (_isDarkMode ? Colors.white : Colors.grey[850])),
         title: Text(
           label,
           style: TextStyle(
-            color: _isDarkMode ? Colors.white : Colors.grey[850],
+            color: isActive ? Colors.blueAccent : (_isDarkMode ? Colors.white : Colors.grey[850]),
             fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
           ),
         ),
-        tileColor: isActive ? Colors.blueAccent : Colors.transparent,
+        tileColor: isActive ? (_isDarkMode ? Colors.blueGrey[900] : Colors.blue[50]) : Colors.transparent,
         onTap: () {
           if (index >= 0) {
             setState(() {
@@ -135,14 +152,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _isDarkMode = value; // Toggle dark mode
         });
       },
-      secondary: const Icon(Icons.brightness_6),
+      secondary: Icon(Icons.brightness_6, color: _isDarkMode ? Colors.white : Colors.grey[850]),
     );
   }
 
   Widget _buildUserProfile() {
     return Drawer(
       child: Container(
-        width: 300, // Fixed width for the user profile section
+        width: 250, // Fixed width for the user profile section
         padding: const EdgeInsets.all(16),
         color: _isDarkMode ? Colors.grey[850] : Colors.white,
         child: Column(
@@ -158,7 +175,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onPressed: () {
                 Navigator.pushNamed(context, '/editProfile'); // Navigate to edit profile screen
               },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueAccent,
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              ),
               child: const Text('Edit Profile'),
             ),
             const SizedBox(height: 20),
@@ -166,7 +186,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onPressed: () {
                 Navigator.pushReplacementNamed(context, '/login'); // Navigate to login screen
               },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              ),
               child: const Text('Log Out'),
             ),
           ],
