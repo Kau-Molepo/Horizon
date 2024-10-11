@@ -32,6 +32,9 @@ class UserLogin(BaseModel):
     password: str
     access_token: Optional[str] = None
 
+class UserGet(BaseModel):
+    user_id: int
+
 # Payroll Schemas
 class PayrollCreate(BaseModel):
     user_id: int

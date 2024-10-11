@@ -1,11 +1,12 @@
-import 'package:flutter/material.dart'; 
+import 'package:flutter/material.dart';
+import 'package:flutter_app/screens/login_screen.dart';
 import 'application_screen.dart';
-import 'profile_screen.dart'; 
+import 'profile_screen.dart';
 import 'payroll_screen.dart';
 import 'hr_screen.dart';
 import 'support_screen.dart';
 import 'document_upload_screen.dart';
-import 'analytics_screen.dart'; 
+import 'analytics_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -15,7 +16,6 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  // List of screens corresponding to the navigation items
   final List<Widget> _screens = const [
     AnalyticsScreen(key: ValueKey('AnalyticsScreen')),
     PayrollScreen(key: ValueKey('PayrollScreen')),
@@ -28,7 +28,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0; // Track the current screen index
   bool _isDarkMode = false; // Track dark mode state
 
- @override
+  @override
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: _isDarkMode ? ThemeData.dark() : ThemeData.light(),
@@ -36,12 +36,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         appBar: AppBar(
           backgroundColor: _isDarkMode ? Colors.black : Colors.blueAccent,
           title: Container(
-            width: double.infinity, // Make the container take full width
-            alignment: Alignment.center, // Center the title
+            width: double.infinity,
+            alignment: Alignment.center,
             child: const Text(
               'Horizon',
               style: TextStyle(
-                fontWeight: FontWeight.bold, // Optional: make the title bold
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
@@ -58,36 +58,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         body: Row(
           children: [
-            _buildDrawer(), // Build the navigation drawer (left side)
+            _buildDrawer(),
             Expanded(
               child: SafeArea(
                 child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300), // Smooth transition
-                  child: _screens[_currentIndex], // Display the current screen
+                  duration: const Duration(milliseconds: 300),
+                  child: _screens[_currentIndex],
                 ),
               ),
             ),
-            _buildUserProfile(), // User profile on the right side
+            _buildSettingsDrawer(), // Add the settings drawer here
           ],
         ),
-        endDrawer: _buildUserProfile(), // User profile drawer on the right
-        drawerScrimColor: Colors.transparent, // Ensures both drawers are visible simultaneously
+        endDrawer: _buildSettingsDrawer(), // Use the settings drawer here
+        drawerScrimColor: Colors.transparent,
       ),
     );
   }
 
-
   Widget _buildDrawer() {
     return Container(
-      width: 250, // Fixed width for the drawer
-      color: _isDarkMode ? Colors.grey[850] : Colors.blueGrey[800], // Darker background for the drawer
+      width: 250,
+      color: _isDarkMode ? Colors.grey[850] : Colors.blueGrey[800],
       child: Drawer(
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero), // Remove rounding
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
         child: Column(
           children: [
-            Padding( // Add padding here
-              padding: const EdgeInsets.only(top: 16.0), // Adjust the value as needed
-              child: _buildDrawerHeader(), // Header of the drawer
+            Padding(
+              padding: const EdgeInsets.only(top: 16.0),
+              child: _buildDrawerHeader('Dashboard'),
             ),
             Expanded(
               child: ListView(
@@ -102,14 +101,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ],
               ),
             ),
-            _buildThemeToggle(), // Theme toggle switch
+            _buildThemeToggle(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDrawerHeader() {
+  Widget _buildDrawerHeader(String title) {
     return DrawerHeader(
       decoration: BoxDecoration(
         color: _isDarkMode ? Colors.black54 : Colors.blueAccent,
@@ -118,18 +117,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           CircleAvatar(
-            backgroundImage: const NetworkImage('https://via.placeholder.com/150'), // Placeholder image
+            backgroundImage: const NetworkImage('https://via.placeholder.com/150'),
             radius: 40,
           ),
-          const SizedBox(height: 10),
-          const Text('Welcome, John Doe', style: TextStyle(color: Colors.white, fontSize: 16)),
         ],
       ),
     );
   }
 
   Widget _buildDrawerItem(IconData icon, String label, int index) {
-    final isActive = _currentIndex == index; // Check if the item is active
+    final isActive = _currentIndex == index;
     return Tooltip(
       message: label,
       child: ListTile(
@@ -170,47 +167,65 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildUserProfile() {
-return Container(
-      width: 250, // Fixed width for the drawer
-      color: _isDarkMode ? Colors.grey[850] : Colors.blueGrey[800], // Darker background for the drawer
+  Widget _buildSettingsDrawer() {
+    return Container(
+      width: 250,
+      color: _isDarkMode ? Colors.grey[850] : Colors.blueGrey[800],
       child: Drawer(
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero), // Remove rounding
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
         child: Column(
           children: [
-            Padding( // Add padding here
-              padding: const EdgeInsets.only(top: 16.0), // Adjust the value as needed
-              child: _buildDrawerHeader(), // Header of the drawer
+            Padding(
+              padding: const EdgeInsets.only(top: 16.0),
+              child: _buildDrawerHeader('Settings'), // Header for settings drawer
             ),
             const SizedBox(height: 16),
-            const Text('Name: John Doe', style: TextStyle(fontSize: 16)),
-            const Text('Role: Employee', style: TextStyle(fontSize: 16)),
-            const Text('Email: john.doe@example.com', style: TextStyle(fontSize: 16)),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pushNamed(context, '/editProfile'); // Navigate to edit profile screen
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueAccent,
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            _buildSettingsDrawerItem(Icons.notifications, 'Notifications', () {
+              // Handle notification preferences tap
+            }),
+            _buildSettingsDrawerItem(Icons.language, 'App Language', () {
+              // Handle app language settings tap
+            }),
+            _buildSettingsDrawerItem(Icons.privacy_tip, 'Privacy Policy', () {
+              // Handle privacy policy tap
+            }),
+            _buildSettingsDrawerItem(Icons.info, 'About Us', () {
+              // Handle about us tap
+            }),
+            const Spacer(),
+            const SizedBox(height: 16), // Spacing before log out button
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0), // Added padding to the bottom
+              child: ElevatedButton(
+                onPressed: () {
+                  // Navigate to Dashboard after login
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoginScreen()));
+                  // Handle logout
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Logged out")),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                ),
+                child: const Text('Log Out'),
               ),
-              child: const Text('Edit Profile'),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pushReplacementNamed(context, '/login'); // Navigate to login screen
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.redAccent,
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              ),
-              child: const Text('Log Out'),
             ),
           ],
         ),
       ),
+    );
+  }
+
+
+  Widget _buildSettingsDrawerItem(IconData icon, String label, VoidCallback onTap) {
+    return ListTile(
+      leading: Icon(icon, color: _isDarkMode ? Colors.white : Colors.grey[850]),
+      title: Text(label, style: const TextStyle(fontSize: 16)),
+      onTap: onTap,
     );
   }
 }

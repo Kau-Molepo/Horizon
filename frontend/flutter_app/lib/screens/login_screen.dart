@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -13,7 +14,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  bool _isLoading = false; // To show a loading indicator while waiting for a response
+  bool _isLoading = false;
 
   // FastAPI Login Function
   Future<void> _login() async {
@@ -21,41 +22,40 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true; // Start loading
     });
 
-    // Define the API endpoint
-    const String apiUrl = "http://127.0.0.1:8000/users/login"; // Replace with your FastAPI URL
+    const String apiUrl = "http://127.0.0.1:8000/users/login"; // Your API URL
 
-    // Prepare the request body
     Map<String, dynamic> body = {
       'email': _emailController.text,
       'password': _passwordController.text,
     };
 
     try {
-      // Send a POST request to the login endpoint
       final response = await http.post(
         Uri.parse(apiUrl),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode(body),
       );
 
-      // Check if the response is successful
       if (response.statusCode == 200) {
-        // Parse the response body
         var jsonResponse = jsonDecode(response.body);
+        
+        // Saving login response in SharedPreferences
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString('email', _emailController.text);
+        await prefs.setInt('user_id', jsonResponse['user_id']);
+        // Save any other relevant information like token if needed
 
-        // If login is successful, navigate to the Dashboard
+        // Navigate to Dashboard after login
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const DashboardScreen()),
         );
       } else {
-        // If the login fails, show an error message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Invalid email or password')),
         );
       }
     } catch (error) {
-      // Handle network or other errors
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $error')),
       );
@@ -69,7 +69,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black87, // Matching theme with splash screen
+      backgroundColor: Colors.black87,
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 50),
         child: Column(
@@ -80,8 +80,6 @@ class _LoginScreenState extends State<LoginScreen> {
               style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
             ),
             const SizedBox(height: 40),
-
-            // Email Input Field
             TextField(
               controller: _emailController,
               decoration: InputDecoration(
@@ -102,8 +100,6 @@ class _LoginScreenState extends State<LoginScreen> {
               style: const TextStyle(color: Colors.white),
             ),
             const SizedBox(height: 20),
-
-            // Password Input Field
             TextField(
               controller: _passwordController,
               obscureText: true,
@@ -125,12 +121,10 @@ class _LoginScreenState extends State<LoginScreen> {
               style: const TextStyle(color: Colors.white),
             ),
             const SizedBox(height: 40),
-
-            // Login Button with Loading Indicator
             _isLoading
                 ? const CircularProgressIndicator()
                 : ElevatedButton(
-                    onPressed: _login, // Call the login function
+                    onPressed: _login,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blueAccent,
                       padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 15),

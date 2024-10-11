@@ -27,7 +27,7 @@ def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
     # Create JWT token
     access_token = db_user.access_token
     
-    return {"message": "Login successful", "user_id": db_user.user_id, "access_token": access_token, "token_type": "bearer"}
+    return {"message": "Login successful", "user_id": db_user.user_id, "access_token": access_token, "token_type": "bearer", "role": db_user.role}
 
 @user_router.get("/user", response_model=schemas.UserOut)
 def get_user(user_id: int, db: Session = Depends(get_db)):
