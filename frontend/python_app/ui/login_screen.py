@@ -83,7 +83,7 @@ class LoginScreen(QWidget):
 
         self.setLayout(layout)
         self.setWindowTitle("Login")
-        self.setFixedSize(800, 600)  # Increased height for better layout
+        #self.setFixedSize(800, 600)  # Increased height for better layout
 
     def start_login_thread(self):
         email = self.email_input.text().strip()
