@@ -38,7 +38,7 @@ class LoginScreen(QWidget):
     def initUI(self):
         # Set the background color
         palette = QPalette()
-        palette.setColor(QPalette.Window, QColor(255, 255, 255))
+        palette.setColor(QPalette.Window, QColor(221, 0, 0))
         self.setPalette(palette)
 
         layout = QVBoxLayout()
@@ -51,7 +51,7 @@ class LoginScreen(QWidget):
         layout.addWidget(title_label)
 
         # Spacer for top margin
-        layout.addItem(QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Expanding))
+        layout.addItem(QSpacerItem(20, 300, QSizePolicy.Minimum, QSizePolicy.Minimum))
 
         # Email input field with icon
         self.email_input = QLineEdit(self)
@@ -64,6 +64,10 @@ class LoginScreen(QWidget):
         self.email_input.setStyleSheet("border-radius: 12px; padding: 10px; font-size: 18px; background-color: #424242;" "padding-left: 5px;")
         layout.addWidget(self.email_input)
 
+
+        # Spacer for top margin
+        layout.addItem(QSpacerItem(20, 10, QSizePolicy.Minimum, QSizePolicy.Minimum))
+
         # Password input field with icon
         self.password_input = QLineEdit(self)
         self.password_input.setFixedHeight(35) 
@@ -75,6 +79,10 @@ class LoginScreen(QWidget):
         self.password_input.setStyleSheet("border-radius: 12px; padding: 10px; font-size: 18px; background-color: #424242;" "padding-left: 5px;")
         self.password_input.setEchoMode(QLineEdit.Password)
         layout.addWidget(self.password_input)
+
+
+        # # Spacer for top margin
+        layout.addItem(QSpacerItem(20, 30, QSizePolicy.Minimum, QSizePolicy.Minimum))
 
         # Login button
         self.login_button = QPushButton("Login", self)
