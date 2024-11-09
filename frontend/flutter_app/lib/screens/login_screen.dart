@@ -75,10 +75,13 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
-              "Login",
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
-            ),
+            const Align(
+              alignment: Alignment.topCenter,
+              child: Text(
+                  "Login",
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+              ),
             const SizedBox(height: 40),
             TextField(
               controller: _emailController,
@@ -126,7 +129,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 : ElevatedButton(
                     onPressed: _login,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueAccent,
+                      backgroundColor: const Color.fromRGBO(68, 138, 255, 1),
                       padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 15),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),

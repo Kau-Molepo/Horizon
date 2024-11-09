@@ -47,7 +47,7 @@ class LoginScreen(QWidget):
         # Title label
         title_label = QLabel("Admin Login", self)
         title_label.setAlignment(Qt.AlignCenter)
-        title_label.setFont(QFont("Arial", 24, QFont.Bold))
+        title_label.setFont(QFont("Arial", 28, QFont.Bold))
         layout.addWidget(title_label)
 
         # Spacer for top margin
@@ -55,23 +55,35 @@ class LoginScreen(QWidget):
 
         # Email input field with icon
         self.email_input = QLineEdit(self)
+        self.email_input.setFixedHeight(35)
+        # self.email_input.setFixedWidth(600) 
         self.email_input.setPlaceholderText("Email")
-        self.email_input.setStyleSheet("border-radius: 5px; padding: 10px;")
+        email_icon = QIcon("B:/PLP/Final Project/Horizon/frontend/python_app/assets/mail-svgrepo-com-white.png")  # System icon for email
+        self.email_input.addAction(email_icon, QLineEdit.LeadingPosition)
+        self.email_input.setClearButtonEnabled(True)
+        self.email_input.setStyleSheet("border-radius: 12px; padding: 10px; font-size: 18px; background-color: #424242;" "padding-left: 5px;")
         layout.addWidget(self.email_input)
 
         # Password input field with icon
         self.password_input = QLineEdit(self)
+        self.password_input.setFixedHeight(35) 
+        # self.password_input.setFixedWidth(600)
         self.password_input.setPlaceholderText("Password")
+        password_icon = QIcon("B:/PLP/Final Project/Horizon/frontend/python_app/assets/lock-svgrepo-com-white.png")  # System icon for lock (password)
+        self.password_input.addAction(password_icon, QLineEdit.LeadingPosition)
+        self.password_input.setClearButtonEnabled(True)
+        self.password_input.setStyleSheet("border-radius: 12px; padding: 10px; font-size: 18px; background-color: #424242;" "padding-left: 5px;")
         self.password_input.setEchoMode(QLineEdit.Password)
-        self.password_input.setStyleSheet("border-radius: 5px; padding: 10px;")
         layout.addWidget(self.password_input)
 
         # Login button
         self.login_button = QPushButton("Login", self)
-        self.login_button.setStyleSheet("border-radius: 5px; padding: 10px; background-color: #4CAF50; color: white; font-size: 16px;")
+        self.login_button.setStyleSheet("border-radius: 12px; padding: 8px 100px; background-color: #4487ff; color: white; font-size: 18px; font-weight: bold;")
         self.login_button.setFixedHeight(40)  # Set fixed height for consistency
+        #self.login_button.setFixedWidth(100)
         self.login_button.clicked.connect(self.start_login_thread)
         layout.addWidget(self.login_button)
+        layout.setAlignment(self.login_button, Qt.AlignHCenter)
 
         # Feedback message area
         self.feedback_label = QLabel("", self)
