@@ -1,4 +1,5 @@
 import sys
+import py_hot_reload
 from PySide6.QtWidgets import QApplication, QStackedWidget
 from ui.splash_screen import SplashScreen
 from ui.login_screen import LoginScreen
@@ -75,3 +76,5 @@ class MainApp(QApplication):
 if __name__ == "__main__":
     app = MainApp(sys.argv)
     sys.exit(app.exec())
+
+py_hot_reload.run_with_reloader("__main__")
