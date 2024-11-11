@@ -7,7 +7,7 @@ class ApplicationScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Applications')),
-      body: Center(
+      body: const Center(
         child: Text('Application access details go here'),
       ),
     );

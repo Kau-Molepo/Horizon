@@ -11,29 +11,44 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeInAnimation;
+  bool _hasError = false;
 
   @override
   void initState() {
     super.initState();
+    _initializeAnimations();
+  }
 
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    );
-
-    _fadeInAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeIn,
-    ));
-
-    _animationController.forward();
-
-    // Navigate to Login Screen after splash screen duration
-    Future.delayed(const Duration(seconds: 3), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
+  void _initializeAnimations() {
+    try {
+      _animationController = AnimationController(
+        vsync: this,
+        duration: const Duration(seconds: 2),
       );
+
+      _fadeInAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+        CurvedAnimation(
+          parent: _animationController,
+          curve: Curves.easeIn,
+        ),
+      );
+
+      _animationController.forward();
+      _navigateToNextScreen();
+    } catch (e) {
+      setState(() => _hasError = true);
+      debugPrint('Animation initialization error: $e');
+    }
+  }
+
+  void _navigateToNextScreen() {
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted && !_hasError) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      }
     });
   }
 
@@ -63,16 +78,16 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
           Center(
             child: FadeTransition(
               opacity: _fadeInAnimation,
-              child: Column(
+              child: const Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.ac_unit, // Replace with your app logo
                     size: 100,
                     color: Colors.white,
                   ),
-                  const SizedBox(height: 20),
-                  const Text(
+                  SizedBox(height: 20),
+                  Text(
                     'Horizon',
                     style: TextStyle(
                       fontSize: 40,

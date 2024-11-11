@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_app/screens/login_screen.dart';
-import 'application_screen.dart';
 import 'profile_screen.dart';
 import 'payroll_screen.dart';
 import 'hr_screen.dart';
@@ -9,7 +8,7 @@ import 'document_upload_screen.dart';
 import 'analytics_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({Key? key}) : super(key: key);
+  const DashboardScreen({super.key});
 
   @override
   _DashboardScreenState createState() => _DashboardScreenState();
@@ -113,11 +112,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       decoration: BoxDecoration(
         color: _isDarkMode ? Colors.black54 : Colors.blueAccent,
       ),
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           CircleAvatar(
-            backgroundImage: const NetworkImage('https://via.placeholder.com/150'),
+            backgroundImage: NetworkImage('https://via.placeholder.com/150'),
             radius: 40,
           ),
         ],

@@ -77,9 +77,9 @@ class _LoginScreenState extends State<LoginScreen> {
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
             // "Login" text at the top of the screen
-            Padding(
-              padding: const EdgeInsets.only(top: 5),  // Adjust to position the text closer to the top
-              child: const Text(
+            const Padding(
+              padding: EdgeInsets.only(top: 5),  // Adjust to position the text closer to the top
+              child: Text(
                 "Login",
                 style: TextStyle(
                   fontSize: 34,

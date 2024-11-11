@@ -1,106 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class AnalyticsScreen extends StatefulWidget {
-  const AnalyticsScreen({Key? key}) : super(key: key);
+  const AnalyticsScreen({super.key});
 
   @override
-  _AnalyticsScreenState createState() => _AnalyticsScreenState();
+  State<AnalyticsScreen> createState() => _AnalyticsScreenState();
 }
 
 class _AnalyticsScreenState extends State<AnalyticsScreen> {
-  List<bool> _isSelected = [true, false];
-  String _selectedFilter = 'Last 7 Days';
-  UserRole? _userRole;
-
-  @override
-  void initState() {
-    super.initState();
-    _getUserRole();
-  }
-
-  Future<void> _getUserRole() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    int? userId = prefs.getInt('user_id');
-    if (userId != null) {
-      try {
-        final response = await http.get(
-          Uri.parse('http://127.0.0.1:8000/users/user?user_id=$userId'),
-          headers: {'Content-Type': 'application/json'},
-        );
-
-        if (response.statusCode == 200) {
-          final userData = json.decode(response.body);
-          setState(() {
-            _userRole = _getUserRoleFromResponse(userData);
-          });
-        } else {
-          throw Exception('Failed to load user data: ${response.statusCode}');
-        }
-      } catch (e) {
-        print('Error getting user role: $e');
-        setState(() {
-          _userRole = null;
-        });
-      }
-    } else {
-      print('User ID not found in SharedPreferences');
-      setState(() {
-        _userRole = null;
-      });
-    }
-  }
-
-  UserRole _getUserRoleFromResponse(Map<String, dynamic> userData) {
-    switch (userData['role']) {
-      case 'admin':
-        return UserRole.Admin;
-      case 'manager':
-        return UserRole.Manager;
-      case 'employee':
-        return UserRole.Employee;
-      default:
-        throw Exception('Unknown role: ${userData['role']}');
-    }
-  }
+  final List<FlSpot> performancePoints = const [
+    FlSpot(0, 4),
+    FlSpot(1, 4.5),
+    FlSpot(2, 4.2),
+    FlSpot(3, 4.8),
+    FlSpot(4, 4.7),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    if (_userRole == null) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Analytics Overview'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
+    return SafeArea(
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Analytics Overview',
-                style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-              ),
+              _buildHeader(),
               const SizedBox(height: 20),
-              const Text(
-                'Here you can view your analytics data',
-                style: TextStyle(fontSize: 18),
-              ),
+              _buildPersonalMetrics(),
               const SizedBox(height: 20),
-              _buildKPISection(),
+              _buildPerformanceChart(),
               const SizedBox(height: 20),
-              _buildDateFilters(),
+              _buildUpcomingEvents(),
               const SizedBox(height: 20),
-              _buildMetricToggle(),
-              const SizedBox(height: 20),
-              // Role-Specific Graphs Section
-              _buildRoleSpecificGraphs(),
+              _buildRecentActivity(),
+              const SizedBox(height: 20), // Bottom padding
             ],
           ),
         ),
@@ -108,165 +44,78 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  Widget _buildKPISection() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        _buildKPI('Total Sales', '\$5,000'),
-        _buildKPI('Active Users', '1,230'),
-        _buildKPI('Monthly Growth', '+15%'),
-      ],
-    );
-  }
-
-  Widget _buildKPI(String title, String value) {
+  Widget _buildHeader() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          value,
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          'My Dashboard',
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
         ),
-        const SizedBox(height: 4),
-        Text(title, style: const TextStyle(fontSize: 16)),
+        const SizedBox(height: 8),
+        Text(
+          'Welcome back, John Doe',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Colors.grey,
+              ),
+        ),
       ],
     );
   }
 
-  Widget _buildDateFilters() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        _buildFilterButton('Last 7 Days'),
-        _buildFilterButton('Last Month'),
-        _buildFilterButton('Year to Date'),
-      ],
-    );
-  }
-
-  Widget _buildFilterButton(String label) {
-    return OutlinedButton(
-      onPressed: () {
-        setState(() {
-          _selectedFilter = label;
-        });
+  Widget _buildPersonalMetrics() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: constraints.maxWidth > 600 ? 4 : 2,
+          crossAxisSpacing: 16.0,
+          mainAxisSpacing: 16.0,
+          children: [
+            _buildMetricCard('Hours This Week', '38.5', Icons.access_time, Colors.blue),
+            _buildMetricCard('Leave Balance', '15 days', Icons.beach_access, Colors.orange),
+            _buildMetricCard('Performance', '4.8/5', Icons.star, Colors.green),
+            _buildMetricCard('Tasks Complete', '12/15', Icons.task_alt, Colors.purple),
+          ],
+        );
       },
-      child: Text(
-        label,
-        style: TextStyle(
-          color: _selectedFilter == label ? Colors.blue : Colors.black,
-        ),
+    );
+  }
+
+  Widget _buildMetricCard(String title, String value, IconData icon, Color color) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
       ),
-    );
-  }
-
-  Widget _buildMetricToggle() {
-    return ToggleButtons(
-      isSelected: _isSelected,
-      children: const [
-        Padding(padding: EdgeInsets.all(8.0), child: Text('User Activity')),
-        Padding(padding: EdgeInsets.all(8.0), child: Text('Sales Data')),
-      ],
-      onPressed: (int index) {
-        setState(() {
-          for (int i = 0; i < _isSelected.length; i++) {
-            _isSelected[i] = i == index;
-          }
-        });
-      },
-    );
-  }
-
-  Widget _buildRoleSpecificGraphs() {
-    switch (_userRole!) {
-      case UserRole.Admin:
-        return _buildAdminGraphs();
-      case UserRole.Manager:
-        return _buildManagerGraphs();
-      case UserRole.Employee:
-        return _buildEmployeeGraphs();
-      default:
-        return const SizedBox.shrink();
-    }
-  }
-
-  // Admin-Specific Graphs (Organization-wide, high-level KPIs)
-  Widget _buildAdminGraphs() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 20),
-        const Text(
-          'Organization-Wide Performance',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
-        _buildPieChart(), // Example organization-wide distribution (e.g., revenue by region)
-        const SizedBox(height: 20),
-        _buildBarChart(), // Example high-level bar chart (e.g., department sales comparison)
-      ],
-    );
-  }
-
-  // Manager-Specific Graphs (Team or Department-specific metrics)
-  Widget _buildManagerGraphs() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 20),
-        const Text(
-          'Team Performance Overview',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
-        _buildBarChart(), // Example bar chart (e.g., team performance comparison)
-        const SizedBox(height: 20),
-        _buildLineChart(), // Example line chart (e.g., team activity trends)
-      ],
-    );
-  }
-
-  // Employee-Specific Graphs (Individual performance metrics)
-  Widget _buildEmployeeGraphs() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 20),
-        const Text(
-          'Your Performance Metrics',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
-        _buildLineChart(), // Example line chart (e.g., personal activity trends)
-        const SizedBox(height: 20),
-        _buildPieChart(), // Example pie chart (e.g., personal task distribution)
-      ],
-    );
-  }
-
-  // Charts (Reused Across Roles)
-  Widget _buildPieChart() {
-    return SizedBox(
-      height: 250, // Fix the height
-      child: PieChart(
-        PieChartData(
-          sections: [
-            PieChartSectionData(
-              value: 30,
-              color: Colors.blue,
-              title: 'Category A',
-              radius: 50,
-              titleStyle: const TextStyle(color: Colors.white, fontSize: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 32,
+              color: color,
             ),
-            PieChartSectionData(
-              value: 40,
-              color: Colors.green,
-              title: 'Category B',
-              radius: 50,
-              titleStyle: const TextStyle(color: Colors.white, fontSize: 16),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
-            PieChartSectionData(
-              value: 30,
-              color: Colors.red,
-              title: 'Category C',
-              radius: 50,
-              titleStyle: const TextStyle(color: Colors.white, fontSize: 16),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
           ],
         ),
@@ -274,54 +123,169 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  Widget _buildBarChart() {
-    return SizedBox(
-      height: 250, // Fix the height
-      child: BarChart(
-        BarChartData(
-          titlesData: FlTitlesData(
-            leftTitles: SideTitles(showTitles: true),
-            bottomTitles: SideTitles(showTitles: true),
-          ),
-          borderData: FlBorderData(show: false),
-          barGroups: [
-            BarChartGroupData(x: 0, barRods: [BarChartRodData(y: 10, colors: [Colors.blue])]),
-            BarChartGroupData(x: 1, barRods: [BarChartRodData(y: 15, colors: [Colors.green])]),
-            BarChartGroupData(x: 2, barRods: [BarChartRodData(y: 20, colors: [Colors.red])]),
+
+  Widget _buildPerformanceChart() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Performance Trend',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 200,
+              child: LineChart(
+                LineChartData(
+                  gridData: FlGridData(show: true),
+                  titlesData: FlTitlesData(
+                    show: true,
+                    topTitles: SideTitles(showTitles: false),
+                    rightTitles: SideTitles(showTitles: false),
+                    bottomTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 30,
+                      interval: 1,
+                      getTextStyles: (context, value) => const TextStyle(),
+                      getTitles: (value) => 'W${value.toInt() + 1}',
+                    ),
+                    leftTitles: SideTitles(
+                      showTitles: true,
+                      interval: 1,
+                      reservedSize: 42,
+                      getTextStyles: (context, value) => const TextStyle(),
+                      getTitles: (value) => value.toStringAsFixed(1),
+                    ),
+                  ),
+                  borderData: FlBorderData(
+                    show: true,
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  minX: 0,
+                  maxX: 4,
+                  minY: 0,
+                  maxY: 5,
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: performancePoints,
+                      isCurved: true,
+                      colors: [Colors.green],
+                      barWidth: 3,
+                      dotData: FlDotData(show: true),
+                      belowBarData: BarAreaData(
+                        show: true,
+                        colors: [Colors.green.withOpacity(0.2)],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildLineChart() {
-    return SizedBox(
-      height: 250, // Fix the height
-      child: LineChart(
-        LineChartData(
-          titlesData: FlTitlesData(
-            leftTitles: SideTitles(showTitles: true),
-            bottomTitles: SideTitles(showTitles: true),
-          ),
-          borderData: FlBorderData(show: false),
-          lineBarsData: [
-            LineChartBarData(
-              spots: [
-                FlSpot(0, 3),
-                FlSpot(1, 5),
-                FlSpot(2, 7),
-                FlSpot(3, 10),
-                FlSpot(4, 8),
+  Widget _buildUpcomingEvents() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Upcoming Events',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            ListView(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                _buildEventItem('Team Meeting', 'Today, 2:00 PM', Icons.group, Colors.blue),
+                _buildEventItem('Project Deadline', 'Tomorrow, 5:00 PM', Icons.assignment, Colors.red),
+                _buildEventItem('Training Session', 'Thursday, 10:00 AM', Icons.school, Colors.green),
               ],
-              isCurved: true,
-              colors: [Colors.blue],
-              dotData: FlDotData(show: false),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildEventItem(String title, String time, IconData icon, Color color) {
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor: color.withOpacity(0.1),
+        child: Icon(icon, color: color),
+      ),
+      title: Text(title),
+      subtitle: Text(time),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () {
+        // Handle event tap
+      },
+    );
+  }
+
+  Widget _buildRecentActivity() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Recent Activity',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            ListView(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                _buildActivityItem('Completed Project Review', '2 hours ago', Icons.rate_review, Colors.purple),
+                _buildActivityItem('Submitted Time Sheet', '5 hours ago', Icons.access_time, Colors.blue),
+                _buildActivityItem('Training Completed', 'Yesterday', Icons.school, Colors.green),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActivityItem(String title, String time, IconData icon, Color color) {
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor: color.withOpacity(0.1),
+        child: Icon(icon, color: color, size: 20),
+      ),
+      title: Text(title),
+      subtitle: Text(time),
+      dense: true,
     );
   }
 }
-
-enum UserRole { Admin, Manager, Employee }

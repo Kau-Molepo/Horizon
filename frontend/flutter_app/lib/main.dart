@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       title: 'Horizon',
       themeMode: ThemeMode.system,
       home: SplashScreen(), // Set SplashScreen as the home screen
