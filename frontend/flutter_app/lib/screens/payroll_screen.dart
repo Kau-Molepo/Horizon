@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:intl/intl.dart';
 import 'dart:convert';
-import 'dart:math';
 
 class PayrollScreen extends StatefulWidget {
   const PayrollScreen({super.key});
@@ -13,109 +10,24 @@ class PayrollScreen extends StatefulWidget {
   _PayrollScreenState createState() => _PayrollScreenState();
 }
 
-class _PayrollScreenState extends State<PayrollScreen> with SingleTickerProviderStateMixin {
+class _PayrollScreenState extends State<PayrollScreen> {
   final List<Employee> _employees = [];
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _hoursController = TextEditingController();
   final TextEditingController _rateController = TextEditingController();
-  final TextEditingController _overtimeController = TextEditingController();
-  final TextEditingController _bonusController = TextEditingController();
-  final TextEditingController _searchController = TextEditingController();
-  
-  late TabController _tabController;
-  final _currencyFormatter = NumberFormat.currency(symbol: '\$');
-  
   UserRole? _userRole;
   bool _isLoading = false;
-  bool _isGridView = false;
-  String _selectedPayPeriod = 'Weekly';
-  String _selectedDepartment = 'Engineering';
-  bool _includeOvertime = false;
-  bool _includeBonus = false;
-  DateTime _selectedDate = DateTime.now();
-  
-  final List<String> _payPeriods = ['Weekly', 'Bi-Weekly', 'Monthly'];
-  final List<String> _departments = ['Engineering', 'Sales', 'Marketing', 'HR', 'Finance'];
-  final List<String> _exportOptions = ['PDF', 'CSV', 'Excel'];
-  
-  // Filter states
-  Set<String> _selectedDepartmentFilters = {};
-  RangeValues _salaryRange = const RangeValues(0, 100000);
-  
-  // Settings
-  bool _enableNotifications = true;
-  bool _enableAutoSave = true;
-  bool _showTaxCalculations = false;
-
-  final List<FlSpot> _payrollTrend = [
-    const FlSpot(0, 45000),
-    const FlSpot(1, 48000),
-    const FlSpot(2, 47000),
-    const FlSpot(3, 49000),
-    const FlSpot(4, 52000),
-    const FlSpot(5, 53000),
-  ];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
     _getUserRole();
-    _loadSampleEmployees();
-    _loadPreferences();
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    _nameController.dispose();
-    _hoursController.dispose();
-    _rateController.dispose();
-    _overtimeController.dispose();
-    _bonusController.dispose();
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  void _loadSampleEmployees() {
-    _employees.addAll([
-      Employee(
-        name: 'John Doe',
-        hoursWorked: 40,
-        hourlyRate: 25,
-        overtimeHours: 5,
-        department: 'Engineering',
-        bonus: 1000,
-      ),
-      Employee(
-        name: 'Jane Smith',
-        hoursWorked: 38,
-        hourlyRate: 30,
-        overtimeHours: 3,
-        department: 'Marketing',
-        bonus: 800,
-      ),
-    ]);
-  }
-
-  Future<void> _loadPreferences() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      setState(() {
-        _enableNotifications = prefs.getBool('enableNotifications') ?? true;
-        _enableAutoSave = prefs.getBool('enableAutoSave') ?? true;
-        _showTaxCalculations = prefs.getBool('showTaxCalculations') ?? false;
-        _isGridView = prefs.getBool('isGridView') ?? false;
-      });
-    } catch (e) {
-      _showErrorDialog('Error loading preferences');
-    }
   }
 
   Future<void> _getUserRole() async {
     setState(() => _isLoading = true);
     try {
-      final prefs = await SharedPreferences.getInstance();
+      SharedPreferences prefs = await SharedPreferences.getInstance();
       int? userId = prefs.getInt('user_id');
 
       if (userId != null) {
@@ -130,19 +42,35 @@ class _PayrollScreenState extends State<PayrollScreen> with SingleTickerProvider
         } else {
           throw Exception('Failed to load user data');
         }
+      } else {
+        throw Exception('User ID not found in SharedPreferences');
       }
     } catch (e) {
-      _showErrorDialog('Error fetching user data. Please try again.');
+      print('Error getting user role: $e');
       setState(() => _userRole = null);
+      _showErrorDialog('Error fetching user data. Please try again.');
     } finally {
       setState(() => _isLoading = false);
+    }
+  }
+
+  UserRole _mapUserRole(String role) {
+    switch (role) {
+      case 'admin':
+        return UserRole.Admin;
+      case 'manager':
+        return UserRole.Manager;
+      case 'employee':
+        return UserRole.Employee;
+      default:
+        throw Exception('Unknown role: $role');
     }
   }
 
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (_) => AlertDialog(
         title: const Text('Error'),
         content: Text(message),
         actions: [
@@ -155,436 +83,363 @@ class _PayrollScreenState extends State<PayrollScreen> with SingleTickerProvider
     );
   }
 
-  UserRole _mapUserRole(String role) {
-    switch (role.toLowerCase()) {
-      case 'admin':
-        return UserRole.Admin;
-      case 'manager':
-        return UserRole.Manager;
-      case 'employee':
-        return UserRole.Employee;
-      default:
-        throw Exception('Unknown role: $role');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Payroll Management'),
-          bottom: TabBar(
-            controller: _tabController,
-            tabs: const [
-              Tab(icon: Icon(Icons.dashboard), text: 'Overview'),
-              Tab(icon: Icon(Icons.people), text: 'Employees'),
-              Tab(icon: Icon(Icons.settings), text: 'Settings'),
-            ],
-          ),
-          actions: _buildAppBarActions(),
-        ),
-        body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildOverviewTab(),
-                  _buildEmployeesTab(),
-                  _buildSettingsTab(),
-                ],
-              ),
-        floatingActionButton: _buildFloatingActionButton(),
-      ),
-    );
-  }
-
-  List<Widget> _buildAppBarActions() {
-    return [
-      IconButton(
-        icon: Icon(_isGridView ? Icons.list : Icons.grid_view),
-        onPressed: () => setState(() => _isGridView = !_isGridView),
-      ),
-      PopupMenuButton<String>(
-        icon: const Icon(Icons.file_download),
-        onSelected: _handleExport,
-        itemBuilder: (context) => _exportOptions
-            .map((option) => PopupMenuItem(
-                  value: option,
-                  child: Text('Export as $option'),
-                ))
-            .toList(),
-      ),
-    ];
-  }
-
-  Widget _buildOverviewTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildQuickStats(),
-          const SizedBox(height: 20),
-          _buildPayrollTrendChart(),
-          if (_showTaxCalculations) ...[
-            const SizedBox(height: 20),
-            _buildTaxSummary(),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickStats() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Quick Stats - ${DateFormat('MMMM yyyy').format(_selectedDate)}',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildStatItem('Total Payroll', _calculateTotalPayroll()),
-                _buildStatItem('Total Employees', _employees.length.toString()),
-                _buildStatItem('Average Salary', _calculateAverageSalary()),
-              ],
-            ),
-          ],
+    return SafeArea(
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _userRole == null
+                  ? const Center(child: Text('No user role found.'))
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHeader(),
+                        const SizedBox(height: 20),
+                        _buildRoleSpecificContent(),
+                      ],
+                    ),
         ),
       ),
     );
   }
 
-  Widget _buildStatItem(String label, String value) {
-    return Expanded(
-      child: Column(
-        children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.titleSmall,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _calculateTotalPayroll() {
-    double total = _employees.fold(0, (sum, emp) {
-      return sum + (emp.hourlyRate * emp.hoursWorked) +
-          (emp.overtimeHours * emp.hourlyRate * 1.5) +
-          emp.bonus;
-    });
-    return _currencyFormatter.format(total);
-  }
-
-  String _calculateAverageSalary() {
-    if (_employees.isEmpty) return _currencyFormatter.format(0);
-    double total = _employees.fold(0, (sum, emp) {
-      return sum + (emp.hourlyRate * 2080); // 2080 = 40 hours * 52 weeks
-    });
-    double average = total / _employees.length;
-    return _currencyFormatter.format(average);
-  }
-
-  Widget _buildPayrollTrendChart() {
-    return LineChart(
-      LineChartData(
-        gridData: FlGridData(show: false),
-        borderData: FlBorderData(show: false),
-        lineBarsData: [
-          LineChartBarData(
-            spots: _payrollTrend,
-            isCurved: true,
-            colors: [Colors.blue],
-            belowBarData: BarAreaData(show: false),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTaxSummary() {
-    // Example Tax Summary widget
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text(
-              'Tax Summary',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            Text('Estimated Taxes: \$5000'),
-            Text('Tax Withheld: \$3000'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmployeesTab() {
+  Widget _buildHeader() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildEmployeeSearchBar(),
-        Expanded(child: _isGridView ? _buildEmployeeGrid() : _buildEmployeeList()),
+        Text(
+          'Payroll Dashboard',
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Role: ${_userRole.toString().split('.').last}',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Colors.grey,
+              ),
+        ),
       ],
     );
   }
 
-  Widget _buildEmployeeSearchBar() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: TextField(
-        controller: _searchController,
-        decoration: const InputDecoration(
-          labelText: 'Search Employees',
-          border: OutlineInputBorder(),
+  Widget _buildRoleSpecificContent() {
+    switch (_userRole!) {
+      case UserRole.Admin:
+        return _buildAdminView();
+      case UserRole.Manager:
+        return _buildManagerView();
+      case UserRole.Employee:
+        return _buildEmployeeView();
+      default:
+        return const Text("Unknown role");
+    }
+  }
+
+  Widget _buildAdminView() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildEmployeeForm(),
+        const SizedBox(height: 20),
+        _buildEmployeeList(),
+      ],
+    );
+  }
+
+  Widget _buildManagerView() {
+    return _buildEmployeeList();
+  }
+
+  Widget _buildEmployeeView() {
+    final employee = Employee(name: 'John Doe', hoursWorked: 40, hourlyRate: 25);
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Personal Payroll',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 20),
+            _buildPayrollMetrics(employee),
+            const SizedBox(height: 20),
+            _buildPayrollDetails(employee),
+          ],
         ),
-        onChanged: (query) {
-          setState(() {});
-        },
+      ),
+    );
+  }
+
+  Widget _buildPayrollMetrics(Employee employee) {
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      crossAxisSpacing: 16.0,
+      mainAxisSpacing: 16.0,
+      children: [
+        _buildMetricCard('Hours Worked', '${employee.hoursWorked}', Icons.access_time, Colors.blue),
+        _buildMetricCard('Hourly Rate', '\$${employee.hourlyRate}', Icons.attach_money, Colors.green),
+        _buildMetricCard('Gross Salary', '\$${employee.calculateGrossSalary()}', Icons.account_balance_wallet, Colors.purple),
+        _buildMetricCard('Pay Period', 'Weekly', Icons.date_range, Colors.orange),
+      ],
+    );
+  }
+
+  Widget _buildMetricCard(String title, String value, IconData icon, Color color) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 32,
+              color: color,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPayrollDetails(Employee employee) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Payroll Details',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            _buildDetailItem('Regular Hours', '${employee.hoursWorked} hrs'),
+            _buildDetailItem('Overtime Hours', '0 hrs'),
+            _buildDetailItem('Regular Pay', '\$${employee.calculateGrossSalary()}'),
+            _buildDetailItem('Overtime Pay', '\$0.00'),
+            const Divider(height: 32),
+            _buildDetailItem('Gross Pay', '\$${employee.calculateGrossSalary()}', isTotal: true),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailItem(String label, String value, {bool isTotal = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: isTotal
+                ? const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)
+                : const TextStyle(fontSize: 16),
+          ),
+          Text(
+            value,
+            style: isTotal
+                ? const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)
+                : const TextStyle(fontSize: 16),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmployeeForm() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Add Employee',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            _buildTextField(_nameController, 'Employee Name', Icons.person),
+            const SizedBox(height: 12),
+            _buildTextField(_hoursController, 'Hours Worked', Icons.timer, isNumber: true),
+            const SizedBox(height: 12),
+            _buildTextField(_rateController, 'Hourly Rate', Icons.attach_money, isNumber: true),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _addEmployee,
+                icon: const Icon(Icons.add),
+                label: const Text('Add Employee'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String labelText, IconData icon, {bool isNumber = false}) {
+    return TextField(
+      controller: controller,
+      keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+      decoration: InputDecoration(
+        prefixIcon: Icon(icon),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        labelText: labelText,
+        filled: true,
+        fillColor: Colors.grey[50],
       ),
     );
   }
 
   Widget _buildEmployeeList() {
-    var filteredEmployees = _employees
-        .where((emp) => emp.name.toLowerCase().contains(_searchController.text.toLowerCase()))
-        .toList();
-
-    return ListView.builder(
-      itemCount: filteredEmployees.length,
-      itemBuilder: (context, index) {
-        return ListTile(
-          title: Text(filteredEmployees[index].name),
-          subtitle: Text('Department: ${filteredEmployees[index].department}'),
-          onTap: () => _showEmployeeDetails(filteredEmployees[index]),
-        );
-      },
-    );
-  }
-
-  Widget _buildEmployeeGrid() {
-    var filteredEmployees = _employees
-        .where((emp) => emp.name.toLowerCase().contains(_searchController.text.toLowerCase()))
-        .toList();
-
-    return GridView.builder(
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-      ),
-      itemCount: filteredEmployees.length,
-      itemBuilder: (context, index) {
-        return Card(
-          child: InkWell(
-            onTap: () => _showEmployeeDetails(filteredEmployees[index]),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(filteredEmployees[index].name),
-                Text('Dept: ${filteredEmployees[index].department}'),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _showEmployeeDetails(Employee employee) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(employee.name),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Department: ${employee.department}'),
-            Text('Hours Worked: ${employee.hoursWorked}'),
-            Text('Hourly Rate: \$_${employee.hourlyRate}'),
-            Text('Overtime: ${employee.overtimeHours} hours'),
-            Text('Bonus: \$_${employee.bonus}'),
-          ],
+    if (_employees.isEmpty) {
+      return Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              Icon(Icons.people_outline, size: 48, color: Colors.grey),
+              SizedBox(height: 16),
+              Text(
+                'No employees added yet',
+                style: TextStyle(fontSize: 18, color: Colors.grey),
+              ),
+            ],
           ),
-        ],
+        ),
+      );
+    }
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
       ),
-    );
-  }
-
-  Widget _buildSettingsTab() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SwitchListTile(
-            title: const Text('Enable Notifications'),
-            value: _enableNotifications,
-            onChanged: (value) async {
-              setState(() {
-                _enableNotifications = value;
-              });
-              final prefs = await SharedPreferences.getInstance();
-              prefs.setBool('enableNotifications', value);
-            },
-          ),
-          SwitchListTile(
-            title: const Text('Auto-Save Changes'),
-            value: _enableAutoSave,
-            onChanged: (value) async {
-              setState(() {
-                _enableAutoSave = value;
-              });
-              final prefs = await SharedPreferences.getInstance();
-              prefs.setBool('enableAutoSave', value);
-            },
-          ),
-          SwitchListTile(
-            title: const Text('Show Tax Calculations'),
-            value: _showTaxCalculations,
-            onChanged: (value) async {
-              setState(() {
-                _showTaxCalculations = value;
-              });
-              final prefs = await SharedPreferences.getInstance();
-              prefs.setBool('showTaxCalculations', value);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _handleExport(String format) {
-    // Logic to handle export, for now just print
-    print('Exporting data as $format');
-  }
-
-  FloatingActionButton _buildFloatingActionButton() {
-    return FloatingActionButton(
-      onPressed: () => _showAddEmployeeForm(),
-      child: const Icon(Icons.add),
-    );
-  }
-
-  void _showAddEmployeeForm() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Employee'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Name'),
+            Text(
+              'Employee List',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
-            TextField(
-              controller: _hoursController,
-              decoration: const InputDecoration(labelText: 'Hours Worked'),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: _rateController,
-              decoration: const InputDecoration(labelText: 'Hourly Rate'),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: _overtimeController,
-              decoration: const InputDecoration(labelText: 'Overtime Hours'),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: _bonusController,
-              decoration: const InputDecoration(labelText: 'Bonus'),
-              keyboardType: TextInputType.number,
+            const SizedBox(height: 16),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _employees.length,
+              itemBuilder: (context, index) {
+                final employee = _employees[index];
+                return Card(
+                  margin: const EdgeInsets.symmetric(vertical: 4),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.blue.withOpacity(0.1),
+                      child: const Icon(Icons.person, color: Colors.blue),
+                    ),
+                    title: Text(
+                      employee.name,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      'Hours: ${employee.hoursWorked} | Rate: \$${employee.hourlyRate.toStringAsFixed(2)}',
+                    ),
+                    trailing: Text(
+                      '\$${employee.calculateGrossSalary().toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _addEmployee();
-            },
-            child: const Text('Save'),
-          ),
-        ],
       ),
     );
   }
 
   void _addEmployee() {
-    // Add a new employee to the list
-    Employee newEmployee = Employee(
-      name: _nameController.text,
-      hoursWorked: double.parse(_hoursController.text),
-      hourlyRate: double.parse(_rateController.text),
-      overtimeHours: double.parse(_overtimeController.text),
-      bonus: double.parse(_bonusController.text),
-    );
-
-    setState(() {
-      _employees.add(newEmployee);
-    });
-
-    _clearTextFields();
-  }
-
-  void _clearTextFields() {
-    _nameController.clear();
-    _hoursController.clear();
-    _rateController.clear();
-    _overtimeController.clear();
-    _bonusController.clear();
+    // Add Employee functionality
   }
 }
 
 class Employee {
-  String name;
-  double hoursWorked;
-  double hourlyRate;
-  double overtimeHours;
-  double bonus;
-  String department;
+  final String name;
+  final double hoursWorked;
+  final double hourlyRate;
 
-  Employee({
-    required this.name,
-    required this.hoursWorked,
-    required this.hourlyRate,
-    required this.overtimeHours,
-    required this.bonus,
-    this.department = 'Engineering',
-  });
+  Employee({required this.name, required this.hoursWorked, required this.hourlyRate});
+
+  double calculateGrossSalary() {
+    return hoursWorked * hourlyRate;
+  }
 }
 
-enum UserRole {
-  Admin,
-  Manager,
-  Employee,
-}
+enum UserRole { Admin, Manager, Employee }

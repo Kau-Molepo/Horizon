@@ -56,7 +56,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Welcome back, John Doe',
+          'Welcome back',
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 color: Colors.grey,
               ),
